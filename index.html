@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Cod</title>
+
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<link rel="manifest" href="manifest.json" />
+		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		<link rel="icon" href="/assets/cod.webp" type="image/webp" />
+
+		<link rel="apple-touch-icon" href="/assets/apple-touch-icon-180x180.png" />
+	</head>
+	<body>
+		<main id="cod">
+			<section id="cod-scanner">
+				<video id="cod-scanner-video" autoplay muted playsinline></video>
+				<div id="cod-scanner-target"></div>
+			</section>
+
+			<section id="cod-controls">
+				<header>
+					<img id="cod-logo" src="/assets/cod.webp" alt="Logo Cod" />
+
+					<div>
+						<input
+							type="checkbox"
+							name="autoscan"
+							id="cod-controls-autoscan"
+							checked
+						/>
+						<label for="cod-controls-autoscan">
+							<i class="bi bi-lightning-charge-fill checked"></i>
+							<i class="bi bi-lightning-charge unchecked"></i>
+						</label>
+
+						<input type="checkbox" name="flashlight" id="cod-controls-flashlight" />
+						<label for="cod-controls-flashlight">
+							<i class="bi bi-lightbulb-fill checked"></i>
+							<i class="bi bi-lightbulb-off unchecked"></i>
+						</label>
+					</div>
+				</header>
+
+				<footer></footer>
+			</section>
+
+			<section id="cod-info">
+				<div id="cod-info-modal">
+					<table>
+						<tr>
+							<th>Format</th>
+							<td>Haha</td>
+						</tr>
+						<tr>
+							<th>Taille</th>
+							<td>123 octets</td>
+						</tr>
+					</table>
+
+					<code></code>
+				</div>
+			</section>
+
+			<section id="cod-overlay"></section>
+		</main>
+
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
