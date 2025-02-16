@@ -1,106 +1,34 @@
-import { parseEan13Barcode } from './formats/ean.format';
-import { parseUpcBarcode } from './formats/upc.format';
+import { CodDatamatrixFormat } from './formats/datamatrix.format';
+import { CodAztecFormat } from './formats/aztec.format';
+import { CodEanFormat } from './formats/ean.format';
+import { CodUpcFormat } from './formats/upc.format';
 
-const regionNames = new Intl.DisplayNames(navigator.languages, { type: 'region' });
+import { CodFormat, ICodFormatConfig, ICodFormatInvestigation } from './formats/format';
+import { CodQrFormat } from './formats/qr.format';
 
-export const barcodeFormatConfig: Record<string, ICodConfigBarcodeFormatOptions> = {
-	upc_a: {
-		label: 'UPC-A',
-		displayInt: true,
+export class CodInvestigator {
+	private static formatIndex: Record<string, CodFormat> = {};
 
-		displayInfoExtractor: (rawValue: string) => {
-			const output: ICodConfigBarcodeFormatInfo[] = [];
+	public static register(format: string, handler: CodFormat): typeof CodInvestigator {
+		this.formatIndex[format] = handler;
 
-			const parsedUpcContent = parseUpcBarcode(rawValue);
+		return CodInvestigator;
+	}
 
-			output.push({ type: 'TYPE', value: parsedUpcContent.type });
+	public static getConfig(format: string): ICodFormatConfig | null {
+		return this.formatIndex[format]?.config ?? null;
+	}
 
-			if (parsedUpcContent.manufacturerCode)
-				output.push({
-					type: 'MANUFACTURER',
-					value: parsedUpcContent.manufacturerCode + '',
-				});
+	public static investivate(format: string, rawValue: string): ICodFormatInvestigation {
+		const formatHandler = this.formatIndex[format];
+		if (!formatHandler) return {};
 
-			output.push({ type: 'ITEM NUMBER', value: parsedUpcContent.itemNumber + '' });
-
-			return output;
-		},
-	},
-	upc_e: {
-		label: 'UPC-E',
-		displayInt: true,
-	},
-	ean_8: {
-		label: 'EAN 8',
-		displayInt: true,
-	},
-	ean_13: {
-		label: 'EAN 13',
-		displayInt: true,
-		displayInfoExtractor: (rawValue: string) => {
-			const output: ICodConfigBarcodeFormatInfo[] = [];
-
-			const parsedEanContent = parseEan13Barcode(rawValue);
-
-            if (parsedEanContent.audience)
-				output.push({ type: 'AUDIENCE', value: parsedEanContent.audience });
-
-            if (parsedEanContent.domain)
-				output.push({ type: 'DOMAIN', value: parsedEanContent.domain });
-
-			if (parsedEanContent.countryGsCode) {
-                let outputValue = `${parsedEanContent.countryGsCode}`;
-
-                if (parsedEanContent.countryIsoCode) {
-                    const regionName = regionNames.of(parsedEanContent.countryIsoCode) ?? parsedEanContent.countryIsoCode;
-                    outputValue += ` (${regionName})`;
-                }
-
-				output.push({ type: 'COUNTRY', value: outputValue });
-            }
-
-			if (parsedEanContent.itemNumber)
-				output.push({ type: 'ITEM NUMBER', value: parsedEanContent.itemNumber + '' });
-
-			return output;
-		},
-	},
-	aztec: {
-		label: 'Aztec',
-		displayHex: true,
-		displaySize: true,
-	},
-	data_matrix: {
-		label: 'DataMatrix',
-		displayHex: true,
-		displaySize: true,
-	},
-};
-
-export interface ICodConfigBarcodeFormatOptions {
-	label: string;
-
-	displaySize?: boolean;
-	displayHex?: boolean;
-	displayInt?: boolean;
-
-	displayContentTransformer?: (rawValue: string) => ICodConfigBarcodeFormatDisplay;
-
-	displayInfoExtractor?: (rawValue: string) => ICodConfigBarcodeFormatInfo[];
+		return formatHandler.investigate(rawValue);
+	}
 }
 
-export interface ICodConfigBarcodeFormatDisplay {
-	type: ICodConfigBarcodeFormatDisplayType;
-	value: string;
-}
-
-export enum ICodConfigBarcodeFormatDisplayType {
-	String = 'STRING',
-	Int = 'INT',
-	Hex = 'HEX',
-}
-
-export interface ICodConfigBarcodeFormatInfo {
-	type: string;
-	value: string;
-}
+CodInvestigator.register('aztec', new CodAztecFormat())
+	.register('data_matrix', new CodDatamatrixFormat())
+	.register('qr_code', new CodQrFormat())
+	.register('ean_13', new CodEanFormat())
+	.register('upc_a', new CodUpcFormat());

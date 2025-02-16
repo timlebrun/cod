@@ -1,46 +1,105 @@
 import { ICodCountryCode } from '../data';
-import { ICodUpcContent, parseUpcBarcode } from './upc.format';
+import { CodUpcFormat, ICodUpcContent } from './upc.format';
 
-export function parseEan13Barcode(rawValue: string): ICodEan13Content {
-	if (rawValue.startsWith('0000000'))
+import {
+	CodFormat,
+	ICodFormatConfig,
+	ICodFormatConfigDisplayType,
+	ICodFormatInvestigation,
+	ICodFormatInvestigationInformation,
+	ICodFormatInvestigationRepresentationType,
+} from './format';
+
+const regionNames = new Intl.DisplayNames(navigator.languages, { type: 'region' });
+
+export class CodEanFormat extends CodFormat {
+	public readonly config: ICodFormatConfig = {
+		displayLabel: 'EAN 13',
+		displayType: ICodFormatConfigDisplayType.TwoDee,
+	};
+
+	public investigate(rawValue: string): ICodFormatInvestigation {
+		const informations: ICodFormatInvestigationInformation[] = [];
+
+		const parsedContent = CodEanFormat.parse(rawValue);
+
+        console.debug({ parsedContent });
+
+		if (parsedContent.audience)
+			informations.push({ label: 'AUDIENCE', value: parsedContent.audience });
+
+		if (parsedContent.domain)
+			informations.push({ label: 'DOMAIN', value: parsedContent.domain });
+
+		if (parsedContent.countryGsCode) {
+			let outputValue = `${parsedContent.countryGsCode}`;
+
+			if (parsedContent.countryIsoCode) {
+				const regionName =
+					regionNames.of(parsedContent.countryIsoCode) ??
+					parsedContent.countryIsoCode;
+				outputValue += ` (${regionName})`;
+			}
+
+			informations.push({ label: 'COUNTRY', value: outputValue });
+		}
+
+		if (parsedContent.itemNumber)
+			informations.push({ label: 'ITEM NUMBER', value: parsedContent.itemNumber + '' });
+
 		return {
-			audience: ICodEan13Audience.Internal,
-			itemNumber: +rawValue.substring(7),
-		};
-
-	if (rawValue.startsWith('00000'))
-		return {
-			audience: ICodEan13Audience.Unused,
-		};
-
-    const gsDomainCode = rawValue.substring(0, 3);
-    const isoCountryCode = gs1CountryCodeMap[gsDomainCode];
-    if (isoCountryCode) {
-        const itemNumberString = rawValue.substring(3);
-		return {
-			audience: ICodEan13Audience.National,
-            countryGsCode: +gsDomainCode,
-            countryIsoCode: isoCountryCode,
-            itemNumber: +itemNumberString,
-		};
-    }
-
-	if (rawValue[0] === '0') {
-		const rest = rawValue.substring(1);
-		const upcParsedContent = parseUpcBarcode(rest);
-
-		return {
-			domain: ICodEan13Domain.UniversalProductCode,
-			upcContent: upcParsedContent,
+			representations: [
+				{
+					type: ICodFormatInvestigationRepresentationType.Int,
+					displayValue: rawValue,
+					actualValue: rawValue,
+				},
+			],
+			informations,
 		};
 	}
 
-	return {};
+	public static parse(rawValue: string): ICodEan13Content {
+		if (rawValue.startsWith('0000000'))
+			return {
+				audience: ICodEan13Audience.Internal,
+				itemNumber: +rawValue.substring(7),
+			};
+
+		if (rawValue.startsWith('00000'))
+			return {
+				audience: ICodEan13Audience.Unused,
+			};
+
+		const gsDomainCode = rawValue.substring(0, 3);
+		const isoCountryCode = gs1CountryCodeMap[gsDomainCode];
+		if (isoCountryCode) {
+			const itemNumberString = rawValue.substring(3);
+			return {
+				audience: ICodEan13Audience.National,
+				countryGsCode: +gsDomainCode,
+				countryIsoCode: isoCountryCode,
+				itemNumber: +itemNumberString,
+			};
+		}
+
+		if (rawValue[0] === '0') {
+			const rest = rawValue.substring(1);
+			const upcParsedContent = CodUpcFormat.parse(rest);
+
+			return {
+				domain: ICodEan13Domain.UniversalProductCode,
+				upcContent: upcParsedContent,
+			};
+		}
+
+		return {};
+	}
 }
 
 export interface ICodEan13Content {
 	domain?: ICodEan13Domain;
-    audience?: ICodEan13Audience;
+	audience?: ICodEan13Audience;
 	itemNumber?: number;
 
 	countryGsCode?: number | null;
@@ -316,7 +375,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'439': ICodCountryCode.Germany,
 	'440': ICodCountryCode.Germany,
 	// 450 - 459 & 490 - 499 	GS1 Japan
-    '450': ICodCountryCode.Japan,
+	'450': ICodCountryCode.Japan,
 	'451': ICodCountryCode.Japan,
 	'452': ICodCountryCode.Japan,
 	'453': ICodCountryCode.Japan,
@@ -327,7 +386,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'458': ICodCountryCode.Japan,
 	'459': ICodCountryCode.Japan,
 	// 460 - 469 	GS1 Russia
-    '460': ICodCountryCode.RussianFederation,
+	'460': ICodCountryCode.RussianFederation,
 	'461': ICodCountryCode.RussianFederation,
 	'462': ICodCountryCode.RussianFederation,
 	'463': ICodCountryCode.RussianFederation,
@@ -374,7 +433,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	// 489 	GS1 Hong Kong, China
 	'489': ICodCountryCode.HongKong,
 	// 490 - 499 & 450 - 459 	GS1 Japan
-    '490': ICodCountryCode.Japan,
+	'490': ICodCountryCode.Japan,
 	'491': ICodCountryCode.Japan,
 	'492': ICodCountryCode.Japan,
 	'493': ICodCountryCode.Japan,
@@ -385,7 +444,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'498': ICodCountryCode.Japan,
 	'499': ICodCountryCode.Japan,
 	// 500 - 509 	GS1 UK
-    '500': ICodCountryCode.UnitedKingdom,
+	'500': ICodCountryCode.UnitedKingdom,
 	'501': ICodCountryCode.UnitedKingdom,
 	'502': ICodCountryCode.UnitedKingdom,
 	'503': ICodCountryCode.UnitedKingdom,
@@ -396,7 +455,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'508': ICodCountryCode.UnitedKingdom,
 	'509': ICodCountryCode.UnitedKingdom,
 	// 520 - 521 	GS1 Association Greece
-    '520': ICodCountryCode.Greece,
+	'520': ICodCountryCode.Greece,
 	'521': ICodCountryCode.Greece,
 	// 528 	GS1 Lebanon
 	'528': ICodCountryCode.Lebanon,
@@ -501,7 +560,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	// 632 	GS1 Rwanda
 	'632': ICodCountryCode.Rwanda,
 	// 640 - 649 	GS1 Finland
-    '640': ICodCountryCode.Finland,
+	'640': ICodCountryCode.Finland,
 	'641': ICodCountryCode.Finland,
 	'642': ICodCountryCode.Finland,
 	'643': ICodCountryCode.Finland,
@@ -512,9 +571,9 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'648': ICodCountryCode.Finland,
 	'649': ICodCountryCode.Finland,
 	// 680 - 681 & 690 - 699 	GS1 China
-    '680': ICodCountryCode.China,
+	'680': ICodCountryCode.China,
 	'681': ICodCountryCode.China,
-    '690': ICodCountryCode.China,
+	'690': ICodCountryCode.China,
 	'691': ICodCountryCode.China,
 	'692': ICodCountryCode.China,
 	'693': ICodCountryCode.China,
@@ -525,7 +584,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'698': ICodCountryCode.China,
 	'699': ICodCountryCode.China,
 	// 700 - 709 	GS1 Norway
-    '700': ICodCountryCode.China,
+	'700': ICodCountryCode.China,
 	'701': ICodCountryCode.China,
 	'702': ICodCountryCode.China,
 	'703': ICodCountryCode.China,
@@ -538,7 +597,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	// 729 	GS1 Israel
 	'729': ICodCountryCode.Israel,
 	// 730 - 739 	GS1 Sweden
-    '730': ICodCountryCode.China,
+	'730': ICodCountryCode.China,
 	'731': ICodCountryCode.China,
 	'732': ICodCountryCode.China,
 	'733': ICodCountryCode.China,
@@ -571,7 +630,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	// 759 	GS1 Venezuela
 	'759': ICodCountryCode.Venezuela,
 	// 760 - 769 	GS1 Switzerland
-    '760': ICodCountryCode.Switzerland,
+	'760': ICodCountryCode.Switzerland,
 	'761': ICodCountryCode.Switzerland,
 	'762': ICodCountryCode.Switzerland,
 	'763': ICodCountryCode.Switzerland,
@@ -601,7 +660,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'789': ICodCountryCode.Brazil,
 	'790': ICodCountryCode.Brazil,
 	// 800 - 839 	GS1 Italy
-    '800': ICodCountryCode.Italy,
+	'800': ICodCountryCode.Italy,
 	'801': ICodCountryCode.Italy,
 	'802': ICodCountryCode.Italy,
 	'803': ICodCountryCode.Italy,
@@ -611,7 +670,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'807': ICodCountryCode.Italy,
 	'808': ICodCountryCode.Italy,
 	'809': ICodCountryCode.Italy,
-    '810': ICodCountryCode.Italy,
+	'810': ICodCountryCode.Italy,
 	'811': ICodCountryCode.Italy,
 	'812': ICodCountryCode.Italy,
 	'813': ICodCountryCode.Italy,
@@ -621,7 +680,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'817': ICodCountryCode.Italy,
 	'818': ICodCountryCode.Italy,
 	'819': ICodCountryCode.Italy,
-    '820': ICodCountryCode.Italy,
+	'820': ICodCountryCode.Italy,
 	'821': ICodCountryCode.Italy,
 	'822': ICodCountryCode.Italy,
 	'823': ICodCountryCode.Italy,
@@ -631,7 +690,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'827': ICodCountryCode.Italy,
 	'828': ICodCountryCode.Italy,
 	'829': ICodCountryCode.Italy,
-    '830': ICodCountryCode.Italy,
+	'830': ICodCountryCode.Italy,
 	'831': ICodCountryCode.Italy,
 	'832': ICodCountryCode.Italy,
 	'833': ICodCountryCode.Italy,
@@ -642,7 +701,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'838': ICodCountryCode.Italy,
 	'839': ICodCountryCode.Italy,
 	// 840 - 849 	GS1 Spain
-    '840': ICodCountryCode.Spain,
+	'840': ICodCountryCode.Spain,
 	'841': ICodCountryCode.Spain,
 	'842': ICodCountryCode.Spain,
 	'843': ICodCountryCode.Spain,
@@ -668,7 +727,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'868': ICodCountryCode.Turkey,
 	'869': ICodCountryCode.Turkey,
 	// 870 - 879 	GS1 Netherlands
-    '870': ICodCountryCode.Netherlands,
+	'870': ICodCountryCode.Netherlands,
 	'871': ICodCountryCode.Netherlands,
 	'872': ICodCountryCode.Netherlands,
 	'873': ICodCountryCode.Netherlands,
@@ -699,7 +758,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	// 899 	GS1 Indonesia
 	'899': ICodCountryCode.Indonesia,
 	// 900 - 919 	GS1 Austria
-    '900': ICodCountryCode.Austria,
+	'900': ICodCountryCode.Austria,
 	'901': ICodCountryCode.Austria,
 	'902': ICodCountryCode.Austria,
 	'903': ICodCountryCode.Austria,
@@ -709,7 +768,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'907': ICodCountryCode.Austria,
 	'908': ICodCountryCode.Austria,
 	'909': ICodCountryCode.Austria,
-    '910': ICodCountryCode.Austria,
+	'910': ICodCountryCode.Austria,
 	'911': ICodCountryCode.Austria,
 	'912': ICodCountryCode.Austria,
 	'913': ICodCountryCode.Austria,
@@ -720,7 +779,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'918': ICodCountryCode.Austria,
 	'919': ICodCountryCode.Austria,
 	// 930 - 939 	GS1 Australia
-    '930': ICodCountryCode.Australia,
+	'930': ICodCountryCode.Australia,
 	'931': ICodCountryCode.Australia,
 	'932': ICodCountryCode.Australia,
 	'933': ICodCountryCode.Australia,
@@ -731,7 +790,7 @@ const gs1CountryCodeMap: Record<string, ICodCountryCode> = {
 	'938': ICodCountryCode.Australia,
 	'939': ICodCountryCode.Australia,
 	// 940 - 949 	GS1 New Zealand
-    '940': ICodCountryCode.NewZealand,
+	'940': ICodCountryCode.NewZealand,
 	'941': ICodCountryCode.NewZealand,
 	'942': ICodCountryCode.NewZealand,
 	'943': ICodCountryCode.NewZealand,

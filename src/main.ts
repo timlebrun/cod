@@ -7,11 +7,7 @@ import {
 	mapVideoCoordinatesToContainer,
 	setAnimationFrameLoop,
 } from './helpers';
-import {
-	barcodeFormatConfig,
-	ICodConfigBarcodeFormatDisplay,
-	ICodConfigBarcodeFormatDisplayType,
-} from './config';
+import { CodInvestigator } from './config';
 
 const overlayMargin = 10;
 
@@ -46,7 +42,7 @@ async function init() {
 
 		for (const barcodeHash of barcodeHashes) {
 			const barcode = barcodeIndex[barcodeHash];
-			const barcodeOptions = barcodeFormatConfig[barcode.format] ?? {};
+			const barcodeFormatConfig = CodInvestigator.getConfig(barcode.format) ?? {};
 
 			const barcodeOverlayId = `cod-overlay-barcode-${barcodeHash}`;
 
@@ -60,7 +56,8 @@ async function init() {
 
 				const overlayLabelElement = document.createElement('span');
 				overlayLabelElement.classList.add('cod-overlay-barcode-label');
-				overlayLabelElement.textContent = barcodeOptions.label ?? barcode.format;
+				overlayLabelElement.textContent =
+					barcodeFormatConfig.displayLabel ?? barcode.format;
 
 				overlayElement.append(overlayLabelElement);
 
@@ -98,47 +95,54 @@ async function init() {
 		shouldBarcodeDetect = false;
 		barcodeIndex = {}; // we clear the screen until next time
 
-		const barcodeOptions = barcodeFormatConfig[barcode.format] ?? {};
+		const barcodeFormatConfig = CodInvestigator.getConfig(barcode.format) ?? {};
 
 		infoModalElement.innerHTML = '';
 
 		const infoTitleElement = document.createElement('h2');
-		infoTitleElement.textContent = barcodeOptions.label ?? barcode.format;
+		infoTitleElement.textContent = barcodeFormatConfig.displayLabel ?? barcode.format;
 
 		infoModalElement.append(infoTitleElement);
 
-		const infoContentElement = document.createElement('code');
-		const infoContentDisplay: ICodConfigBarcodeFormatDisplay =
-			barcodeOptions.displayContentTransformer
-				? barcodeOptions.displayContentTransformer(barcode.rawValue)
-				: { type: ICodConfigBarcodeFormatDisplayType.String, value: barcode.rawValue };
-		infoContentElement.textContent = infoContentDisplay.value;
+		const barcodeInvestigation = CodInvestigator.investivate(
+			barcode.format,
+			barcode.rawValue,
+		);
 
-		infoModalElement.append(infoContentElement);
+		console.debug({ barcodeInvestigation });
 
-		if (barcodeOptions.displayInfoExtractor) {
-			const extractedInfos = barcodeOptions.displayInfoExtractor(barcode.rawValue);
+		if (barcodeInvestigation.informations) {
+			const infoTableElement = document.createElement('table') as HTMLTableElement;
 
-			if (extractedInfos.length) {
-				const infoTableElement = document.createElement('table') as HTMLTableElement;
+			for (const barcodeInformation of barcodeInvestigation.informations) {
+				const infoTableRowElement = document.createElement('tr');
 
-				for (const extractedInfo of extractedInfos) {
-					const infoTableRowElement = document.createElement('tr');
+				const infoTableRowHeaderElement = document.createElement('th');
+				infoTableRowHeaderElement.textContent = barcodeInformation.label;
 
-					const infoTableRowHeaderElement = document.createElement('th');
-					infoTableRowHeaderElement.textContent = extractedInfo.type;
+				const infoTableRowValueElement = document.createElement('td');
+				infoTableRowValueElement.textContent = barcodeInformation.value;
 
-					const infoTableRowValueElement = document.createElement('td');
-					infoTableRowValueElement.textContent = extractedInfo.value;
+				infoTableRowElement.append(infoTableRowHeaderElement, infoTableRowValueElement);
 
-					infoTableRowElement.append(
-						infoTableRowHeaderElement,
-						infoTableRowValueElement,
-					);
-					infoTableElement.append(infoTableRowElement);
-				}
+				infoTableElement.append(infoTableRowElement);
+			}
 
-				infoModalElement.append(infoTableElement);
+			infoModalElement.append(infoTableElement);
+		}
+
+		if (barcodeInvestigation.representations) {
+			for (const barcodeRepresentation of barcodeInvestigation.representations) {
+				const infoRepresentationElement = document.createElement('code');
+
+				infoRepresentationElement.textContent = barcodeRepresentation.displayValue;
+				infoRepresentationElement.addEventListener('click', (event: Event) => {
+					event.preventDefault();
+          event.stopImmediatePropagation();
+					navigator.clipboard.writeText(barcodeRepresentation.actualValue);
+				});
+
+				infoModalElement.append(infoRepresentationElement);
 			}
 		}
 
@@ -150,9 +154,6 @@ async function init() {
 		shouldBarcodeDetect = true;
 	}
 
-	// const barcodeSupportedFormat = await BarcodeDetector.getSupportedFormats();
-	// console.debug({ barcodeSupportedFormat });
-	// clickmeButtonElement.onclick = () => {
 	navigator.mediaDevices
 		.getUserMedia({
 			video: {
@@ -198,10 +199,10 @@ async function init() {
 			updateFlashlight();
 		})
 		.catch();
-	// };
 
 	setInterval(async () => {
 		if (!shouldBarcodeDetect) return;
+    if (!videoElement.videoHeight) return;
 
 		const barcodes = await barcodeDetector.detect(videoElement);
 
