@@ -137,9 +137,9 @@ async function init() {
 
 				infoRepresentationElement.textContent = barcodeRepresentation.displayValue;
 				infoRepresentationElement.addEventListener('click', (event: Event) => {
-					event.preventDefault();
-          event.stopImmediatePropagation();
+					event.stopImmediatePropagation();
 					navigator.clipboard.writeText(barcodeRepresentation.actualValue);
+					infoRepresentationElement.classList.add('copied');
 				});
 
 				infoModalElement.append(infoRepresentationElement);
@@ -170,19 +170,9 @@ async function init() {
 			videoElement.srcObject = stream;
 
 			const track = stream.getVideoTracks()[0];
-			// videoElement.addEventListener('loadedmetadata', () => {
-			// 	videoElement.play();
-			// });
-
-			//Create image capture object and get camera capabilities
-			// const imageCapture = new ImageCapture(track)
-			// const photoCapabilities = track.getCapabilities().then(() => {
-
-			//todo: check if camera has a torch
 
 			function updateFlashlight() {
 				const torchEnabled = controlFlashlightElement.checked;
-				console.debug({ torchEnabled });
 
 				track.applyConstraints({
 					advanced: [
@@ -202,7 +192,7 @@ async function init() {
 
 	setInterval(async () => {
 		if (!shouldBarcodeDetect) return;
-    if (!videoElement.videoHeight) return;
+		if (!videoElement.videoHeight) return;
 
 		const barcodes = await barcodeDetector.detect(videoElement);
 

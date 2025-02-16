@@ -356,15 +356,37 @@ video#cod-scanner-video {
 	font-weight: 700;
 	margin-bottom: 0.5em;
 }
+
 #cod-info-modal code {
 	display: block;
 	background-color: rgba(0, 0, 0, 0.1);
-	padding: 0.6em;
+	padding: 0.6em 3em 0.6em 0.6em;
 	border-radius: 0.4em;
 	font-family: monospace;
 	font-size: 1.2em;
-	line-break: anywhere;
+	line-break:loose;
 	margin-bottom: 0.5em;
+
+  position: relative;
+  cursor: pointer;
+}
+
+#cod-info-modal code::after {
+  content: "\f28e";
+  font-family: bootstrap-icons !important;
+
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+
+  display: flex;
+  align-items: center;
+  padding: .6em;
+}
+
+#cod-info-modal code.copied::after {
+  content: "\f71b";
 }
 
 #cod-info-modal table {

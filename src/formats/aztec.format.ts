@@ -24,16 +24,20 @@ export class CodAztecFormat extends CodFormat {
 		if (isPrintable)
 			representations.push({
 				type: ICodFormatInvestigationRepresentationType.String,
-                displayValue: rawValue,
-                actualValue: rawValue,
+				displayValue: rawValue,
+				actualValue: rawValue,
 			});
 
-        const rawBuffer = Buffer.from(rawValue, 'binary');
-        representations.push({
-            type: ICodFormatInvestigationRepresentationType.Hex,
-            displayValue: rawBuffer.toString('hex'),
-            actualValue: rawBuffer.toString('hex'),
-        });
+		const rawBuffer = Buffer.from(rawValue, 'binary');
+		representations.push({
+			type: ICodFormatInvestigationRepresentationType.Hex,
+			// @ts-expect-error
+			displayValue: rawBuffer
+				.toString('hex')
+				.match(/.{1,2}/g)
+				.join(' '),
+			actualValue: rawBuffer.toString('hex'),
+		});
 
 		return {
 			representations,

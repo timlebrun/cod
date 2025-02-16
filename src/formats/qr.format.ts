@@ -31,7 +31,11 @@ export class CodQrFormat extends CodFormat {
 		const rawBuffer = Buffer.from(rawValue, 'binary');
 		representations.push({
 			type: ICodFormatInvestigationRepresentationType.Hex,
-			displayValue: rawBuffer.toString('hex'),
+			// @ts-expect-error
+			displayValue: rawBuffer
+				.toString('hex')
+				.match(/.{1,2}/g)
+				.join(' '),
 			actualValue: rawBuffer.toString('hex'),
 		});
 
