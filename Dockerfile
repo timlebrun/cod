@@ -14,4 +14,4 @@ RUN yarn global add serve
 WORKDIR /var/www
 COPY --from=builder /var/www/dist .
 
-CMD [ "serve", "-s", "dist" ]
+CMD [ "serve", "-s", "." ]
