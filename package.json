@@ -10,16 +10,15 @@
     "pwa:assets:generate": "pwa-assets-generator"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
     "@vite-pwa/assets-generator": "^0.2.6",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
+    "prettier": "^3.5.1",
     "typescript": "~5.7.2",
     "vite": "^6.1.0"
   },
   "dependencies": {
-    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "barcode-detector": "^3.0.0",
     "bootstrap-icons": "^1.11.3",
-    "buffer": "^6.0.3",
-    "prettier": "^3.5.1"
+    "buffer": "^6.0.3"
   }
 }
