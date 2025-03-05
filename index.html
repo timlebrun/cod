@@ -35,6 +35,12 @@
 							<i class="bi bi-lightning-charge unchecked"></i>
 						</label>
 
+						<input type="checkbox" name="sound" id="cod-controls-sound" checked />
+						<label for="cod-controls-sound">
+							<i class="bi bi-volume-up-fill checked"></i>
+							<i class="bi bi-volume-mute unchecked"></i>
+						</label>
+
 						<input type="checkbox" name="flashlight" id="cod-controls-flashlight" />
 						<label for="cod-controls-flashlight">
 							<i class="bi bi-lightbulb-fill checked"></i>
@@ -47,24 +53,26 @@
 			</section>
 
 			<section id="cod-info">
-				<div id="cod-info-modal">
-					<table>
-						<tr>
-							<th>Format</th>
-							<td>Haha</td>
-						</tr>
-						<tr>
-							<th>Taille</th>
-							<td>123 octets</td>
-						</tr>
-					</table>
-
-					<code></code>
-				</div>
+				<div id="cod-info-modal"></div>
 			</section>
 
 			<section id="cod-overlay"></section>
 		</main>
+
+		<audio
+			id="cod-beep-audio"
+			controls="true"
+			style="display: none;"
+		>
+			<source
+				src="https://cdn.freesound.org/previews/704/704134_15124408-lq.mp3"
+				type="audio/mpeg"
+			/>
+			<source
+				src="https://cdn.freesound.org/previews/704/704134_15124408-lq.ogg"
+				type="audio/ogg"
+			/>
+		</audio>
 
 		<script type="module" src="/src/main.ts"></script>
 	</body>

@@ -34,6 +34,11 @@ async function init() {
 	const controlAutoscanElement = document.getElementById(
 		'cod-controls-autoscan',
 	) as HTMLInputElement;
+	const controlSoundElement = document.getElementById(
+		'cod-controls-sound',
+	) as HTMLInputElement;
+
+	const beepAudioElement = document.getElementById('cod-beep-audio') as HTMLAudioElement;
 
 	const barcodeDetector = new BarcodeDetector();
 
@@ -198,11 +203,13 @@ async function init() {
 
 		const newBarcodeIndex: Record<string, DetectedBarcode> = {};
 
-		if (controlAutoscanElement.checked)
-			if (barcodes.length === 1) {
-				displayBarcodeInfo(barcodes[0]);
-				return;
-			}
+		if (controlAutoscanElement.checked && barcodes.length === 1) {
+			if (controlSoundElement.checked)
+				beepAudioElement.play();
+
+			displayBarcodeInfo(barcodes[0]);
+			return;
+		}
 
 		for (const barcode of barcodes) {
 			const barcodeHashContent = textEncoder.encode(barcode.format + barcode.rawValue);
